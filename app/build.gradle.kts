@@ -59,6 +59,8 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.koin)
+    implementation(libs.arrow.core)
+    implementation(libs.arrow.fx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
