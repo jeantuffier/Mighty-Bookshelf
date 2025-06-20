@@ -1,16 +1,17 @@
 package no.northernfield.mightybookshelf.add
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -20,19 +21,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.layout.AlignmentLine
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import no.northernfield.mightybookshelf.R
 import no.northernfield.mightybookshelf.ui.theme.MightyBookshelfTheme
 
 @Composable
-fun AddScene(modifier: Modifier) {
+fun AddScene(modifier: Modifier, navigateToCamera: () -> Unit) {
     val eventBus = addSceneEventBus()
     val state by addScenePresenter(events = eventBus.events)
     AddSceneContent(
         modifier = modifier,
         state = state,
+        navigateToCamera = navigateToCamera,
         onTitleChanged = { eventBus.produceEvent(AddSceneEvents.TitleChanged(it)) },
         onAuthorChanged = { eventBus.produceEvent(AddSceneEvents.AuthorChanged(it)) },
         onRewardChanged = { eventBus.produceEvent(AddSceneEvents.RewardChanged(it)) },
@@ -46,6 +48,7 @@ fun AddScene(modifier: Modifier) {
 fun AddSceneContent(
     modifier: Modifier,
     state: AddSceneState,
+    navigateToCamera: () -> Unit,
     onTitleChanged: (String) -> Unit,
     onAuthorChanged: (String) -> Unit,
     onRewardChanged: (String) -> Unit,
@@ -66,14 +69,29 @@ fun AddSceneContent(
         AddSceneOutlinedTextField(state.quote, "Quote", onQuoteChanged)
         AddSceneOutlinedTextField(state.publisher, "Publisher", onPublisherChanged)
         Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            modifier = Modifier
-                .width(154.dp)
-                .height(74.dp),
-            onClick = onSaveClicked,
-            shape = RoundedCornerShape(6.dp),
-        ) {
-            Text(text = "Save", style = MaterialTheme.typography.titleSmall)
+        Row {
+            Button(
+                modifier = Modifier
+                    .width(154.dp)
+                    .height(74.dp),
+                onClick = onSaveClicked,
+                shape = RoundedCornerShape(6.dp),
+            ) {
+                Text(text = "Save", style = MaterialTheme.typography.titleSmall)
+            }
+            Spacer(Modifier.width(16.dp))
+            Button(
+                modifier = Modifier
+                    .width(74.dp)
+                    .height(74.dp),
+                onClick = navigateToCamera,
+                shape = RoundedCornerShape(6.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.add_a_photo),
+                    contentDescription = "Open camera button icon"
+                )
+            }
         }
     }
 }
@@ -109,6 +127,7 @@ private fun AddSceneContentPreview() {
             AddSceneContent(
                 modifier = Modifier,
                 state = AddSceneState("Title", "Author", "Reward", "Quote", "Publisher", null),
+                navigateToCamera = {},
                 onTitleChanged = {},
                 onAuthorChanged = {},
                 onRewardChanged = {},

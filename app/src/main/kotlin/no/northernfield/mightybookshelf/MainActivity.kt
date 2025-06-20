@@ -31,32 +31,38 @@ import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
 import no.northernfield.mightybookshelf.add.AddScene
+import no.northernfield.mightybookshelf.camera.CameraPreviewScene
 import no.northernfield.mightybookshelf.ui.theme.MightyBookshelfTheme
 
-sealed interface Scenes : NavKey {
+sealed interface Scenes : NavKey
+
+sealed interface TopLevelScenes : Scenes {
     val unselectedIcon: ImageVector
     val selectedIcon: ImageVector
 }
 
 @Serializable
-data object Home : Scenes {
+data object Home : TopLevelScenes {
     override val unselectedIcon = Icons.Outlined.Home
     override val selectedIcon = Icons.Filled.Home
 }
 
 @Serializable
-data object Search : Scenes {
+data object Search : TopLevelScenes {
     override val unselectedIcon = Icons.Outlined.Search
     override val selectedIcon = Icons.Filled.Search
 }
 
 @Serializable
-data object Add : Scenes {
+data object Add : TopLevelScenes {
     override val unselectedIcon = Icons.Outlined.Add
     override val selectedIcon = Icons.Filled.Add
 }
 
-private val topLevelScenes = listOf<Scenes>(Home, Search, Add)
+@Serializable
+data object Camera : Scenes
+
+private val topLevelScenes = listOf<TopLevelScenes>(Home, Search, Add)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,19 +72,21 @@ class MainActivity : ComponentActivity() {
                 val backStack = rememberNavBackStack<Scenes>(Home)
                 Scaffold(
                     bottomBar = {
-                        NavigationBar {
-                            topLevelScenes.forEachIndexed { index, item ->
-                                NavigationBarItem(
-                                    icon = {
-                                        Icon(
-                                            if (backStack.last() == topLevelScenes[index]) topLevelScenes[index].selectedIcon else topLevelScenes[index].unselectedIcon,
-                                            contentDescription = item::class.java.simpleName
-                                        )
-                                    },
-                                    label = { Text(item::class.java.simpleName) },
-                                    selected = backStack.last() == topLevelScenes[index],
-                                    onClick = { backStack.add(item) }
-                                )
+                        if (topLevelScenes.contains(backStack.last())) {
+                            NavigationBar {
+                                topLevelScenes.forEachIndexed { index, item ->
+                                    NavigationBarItem(
+                                        icon = {
+                                            Icon(
+                                                if (backStack.last() == topLevelScenes[index]) topLevelScenes[index].selectedIcon else topLevelScenes[index].unselectedIcon,
+                                                contentDescription = item::class.java.simpleName
+                                            )
+                                        },
+                                        label = { Text(item::class.java.simpleName) },
+                                        selected = backStack.last() == topLevelScenes[index],
+                                        onClick = { backStack.add(item) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -99,7 +107,12 @@ class MainActivity : ComponentActivity() {
                                 Text(text = "Search Screen")
                             }
                             entry<Add> {
-                                AddScene(Modifier.fillMaxSize())
+                                AddScene(Modifier.fillMaxSize()) {
+                                    backStack.add(Camera)
+                                }
+                            }
+                            entry<Camera> {
+                                CameraPreviewScene(Modifier.fillMaxSize())
                             }
                         }
                     )

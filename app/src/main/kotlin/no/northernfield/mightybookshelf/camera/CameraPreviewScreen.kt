@@ -8,7 +8,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraPreviewScreen(modifier: Modifier = Modifier) {
+fun CameraPreviewScene(modifier: Modifier = Modifier) {
     val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
     if (cameraPermissionState.status.isGranted) {
         CameraPreviewContent(modifier)
