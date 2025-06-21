@@ -10,14 +10,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -35,11 +38,16 @@ fun AddScene(modifier: Modifier, navigateToCamera: () -> Unit) {
         modifier = modifier,
         state = state,
         navigateToCamera = navigateToCamera,
+        onTypeChanged = { eventBus.produceEvent(AddSceneEvents.BookTypeChanged(it)) },
         onTitleChanged = { eventBus.produceEvent(AddSceneEvents.TitleChanged(it)) },
-        onAuthorChanged = { eventBus.produceEvent(AddSceneEvents.AuthorChanged(it)) },
+        onCreativesChanged = { index, creative ->
+            eventBus.produceEvent(AddSceneEvents.CreativesChanged(index, creative))
+        },
+        onCreativeRemoved = { eventBus.produceEvent(AddSceneEvents.CreativeRemoved) },
         onRewardChanged = { eventBus.produceEvent(AddSceneEvents.RewardChanged(it)) },
         onQuoteChanged = { eventBus.produceEvent(AddSceneEvents.QuoteChanged(it)) },
         onPublisherChanged = { eventBus.produceEvent(AddSceneEvents.PublisherChanged(it)) },
+        onLanguageChanged = { eventBus.produceEvent(AddSceneEvents.LanguageChanged(it)) },
         onSaveClicked = { eventBus.produceEvent(AddSceneEvents.SaveClicked) },
     )
 }
@@ -49,11 +57,14 @@ fun AddSceneContent(
     modifier: Modifier,
     state: AddSceneState,
     navigateToCamera: () -> Unit,
+    onTypeChanged: (BookType) -> Unit,
     onTitleChanged: (String) -> Unit,
-    onAuthorChanged: (String) -> Unit,
+    onCreativesChanged: (Int, Creative) -> Unit,
+    onCreativeRemoved: () -> Unit,
     onRewardChanged: (String) -> Unit,
     onQuoteChanged: (String) -> Unit,
     onPublisherChanged: (String) -> Unit,
+    onLanguageChanged: (String) -> Unit,
     onSaveClicked: () -> Unit,
 ) {
     Column(
@@ -63,11 +74,43 @@ fun AddSceneContent(
         Spacer(modifier = Modifier.height(24.dp))
         Text("Add a book", style = MaterialTheme.typography.headlineLarge)
         Spacer(modifier = Modifier.height(24.dp))
+        Row {
+            FilterChip(
+                onClick = { onTypeChanged(BookType.BOOK) },
+                label = { Text("Book") },
+                selected = state.type == BookType.BOOK,
+            )
+            Spacer(Modifier.width(16.dp))
+            FilterChip(
+                onClick = { onTypeChanged(BookType.COMIC_BOOK) },
+                label = { Text("Comic book") },
+                selected = state.type == BookType.COMIC_BOOK,
+            )
+        }
         AddSceneOutlinedTextField(state.title, "Title", onTitleChanged)
-        AddSceneOutlinedTextField(state.author, "Author", onAuthorChanged)
+
+        if (state.type == BookType.COMIC_BOOK) {
+            ComicBookCreatives(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                state = state,
+                onCreativesChanged = onCreativesChanged,
+                onRemoveCreative = onCreativeRemoved,
+            )
+        } else {
+            AddSceneOutlinedTextField(
+                state.creatives.firstOrNull { it.role == CreativeRoles.AUTHOR }?.name ?: "",
+                "Author"
+            ) {
+                onCreativesChanged(0, Creative(CreativeRoles.AUTHOR, it))
+            }
+        }
+
         AddSceneOutlinedTextField(state.reward, "Reward", onRewardChanged)
         AddSceneOutlinedTextField(state.quote, "Quote", onQuoteChanged)
         AddSceneOutlinedTextField(state.publisher, "Publisher", onPublisherChanged)
+        AddSceneOutlinedTextField(state.language, "Language", onLanguageChanged)
         Spacer(modifier = Modifier.height(24.dp))
         Row {
             Button(
@@ -122,17 +165,30 @@ fun AddSceneOutlinedTextField(
 @Preview(showBackground = true)
 @Composable
 private fun AddSceneContentPreview() {
+    var type by remember { mutableStateOf(BookType.COMIC_BOOK) }
     MightyBookshelfTheme {
         Surface {
             AddSceneContent(
                 modifier = Modifier,
-                state = AddSceneState("Title", "Author", "Reward", "Quote", "Publisher", null),
+                state = AddSceneState(
+                    type = type,
+                    title = "Title",
+                    creatives = listOf(),
+                    reward = "Reward",
+                    quote = "Quote",
+                    publisher = "Publisher",
+                    language = "Language",
+                    error = null
+                ),
+                onTypeChanged = { type = it },
                 navigateToCamera = {},
                 onTitleChanged = {},
-                onAuthorChanged = {},
+                onCreativesChanged = { _, _ -> },
+                onCreativeRemoved = {},
                 onRewardChanged = {},
                 onQuoteChanged = {},
                 onPublisherChanged = {},
+                onLanguageChanged = {},
                 onSaveClicked = {},
             )
         }

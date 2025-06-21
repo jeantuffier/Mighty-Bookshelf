@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.jetbrains.kotlin.serialization)
+    alias(libs.plugins.google.ksp)
 }
 
 android {
@@ -59,10 +60,14 @@ dependencies {
     implementation(libs.accompanist.permissions)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.coroutine)
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.koin)
     implementation(libs.arrow.core)
     implementation(libs.arrow.fx)
+
+    ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
