@@ -3,11 +3,19 @@ package no.northernfield.mightybookshelf.add
 import android.os.Parcelable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
+import no.northernfield.mightybookshelf.database.AddDao
+import no.northernfield.mightybookshelf.database.BookCreativeEntity
+import no.northernfield.mightybookshelf.database.BookEntity
+import no.northernfield.mightybookshelf.database.CreativeEntity
 import no.northernfield.mightybookshelf.produceSaveableState
+import org.koin.compose.koinInject
 import kotlin.text.lowercase
 
 sealed interface AddSceneEvents {
@@ -57,7 +65,9 @@ data class AddSceneState(
 
 @Composable
 fun addScenePresenter(
-    events: Flow<AddSceneEvents> = addSceneEventBus().events
+    events: Flow<AddSceneEvents> = addSceneEventBus().events,
+    addDao: AddDao = koinInject<AddDao>(),
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): State<AddSceneState> =
     produceSaveableState(
         AddSceneState(
@@ -100,7 +110,29 @@ fun addScenePresenter(
                 is AddSceneEvents.QuoteChanged -> value = value.copy(quote = it.quote)
                 is AddSceneEvents.PublisherChanged -> value = value.copy(publisher = it.publisher)
                 is AddSceneEvents.LanguageChanged -> value = value.copy(language = it.language)
-                is AddSceneEvents.SaveClicked -> {}
+                is AddSceneEvents.SaveClicked -> {
+                    withContext(dispatcher) {
+                        val bookEntity = BookEntity(
+                            type = value.type,
+                            title = value.title,
+                            reward = value.reward,
+                            quote = value.quote,
+                            publisher = value.publisher,
+                            language = value.language
+                        )
+                        val bookId = addDao.insertBook(bookEntity)
+                        val creativeIds = value.creatives.map {
+                            val creativeEntity = CreativeEntity(
+                                name = it.name,
+                                roles = it.role,
+                            )
+                            addDao.insertCreative(creativeEntity)
+                        }
+                        creativeIds.forEach { creativeId ->
+                            addDao.insertBookCreative(BookCreativeEntity(bookId, creativeId))
+                        }
+                    }
+                }
             }
         }.launchIn(this)
     }
