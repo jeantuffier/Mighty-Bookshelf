@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -40,10 +42,11 @@ fun AddScene(modifier: Modifier, navigateToCamera: () -> Unit) {
         navigateToCamera = navigateToCamera,
         onTypeChanged = { eventBus.produceEvent(AddSceneEvents.BookTypeChanged(it)) },
         onTitleChanged = { eventBus.produceEvent(AddSceneEvents.TitleChanged(it)) },
-        onCreativesChanged = { index, creative ->
+        onChangeCreatives = { index, creative ->
             eventBus.produceEvent(AddSceneEvents.CreativesChanged(index, creative))
         },
-        onCreativeRemoved = { eventBus.produceEvent(AddSceneEvents.CreativeRemoved) },
+        onRemoveCreative = { eventBus.produceEvent(AddSceneEvents.CreativeRemoved) },
+        onAddCreative = { eventBus.produceEvent(AddSceneEvents.CreativesAdded) },
         onRewardChanged = { eventBus.produceEvent(AddSceneEvents.RewardChanged(it)) },
         onQuoteChanged = { eventBus.produceEvent(AddSceneEvents.QuoteChanged(it)) },
         onPublisherChanged = { eventBus.produceEvent(AddSceneEvents.PublisherChanged(it)) },
@@ -59,16 +62,20 @@ fun AddSceneContent(
     navigateToCamera: () -> Unit,
     onTypeChanged: (BookType) -> Unit,
     onTitleChanged: (String) -> Unit,
-    onCreativesChanged: (Int, Creative) -> Unit,
-    onCreativeRemoved: () -> Unit,
+    onChangeCreatives: (Int, Creative) -> Unit,
+    onRemoveCreative: () -> Unit,
+    onAddCreative: () -> Unit,
     onRewardChanged: (String) -> Unit,
     onQuoteChanged: (String) -> Unit,
     onPublisherChanged: (String) -> Unit,
     onLanguageChanged: (String) -> Unit,
     onSaveClicked: () -> Unit,
 ) {
+    val scrollState = rememberScrollState()
     Column(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(modifier = Modifier.height(24.dp))
@@ -95,15 +102,16 @@ fun AddSceneContent(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 state = state,
-                onCreativesChanged = onCreativesChanged,
-                onRemoveCreative = onCreativeRemoved,
+                onChangeCreatives = onChangeCreatives,
+                onRemoveCreative = onRemoveCreative,
+                onAddCreative = onAddCreative,
             )
         } else {
             AddSceneOutlinedTextField(
                 state.creatives.firstOrNull { it.role == CreativeRoles.AUTHOR }?.name ?: "",
                 "Author"
             ) {
-                onCreativesChanged(0, Creative(CreativeRoles.AUTHOR, it))
+                onChangeCreatives(0, Creative(CreativeRoles.AUTHOR, it))
             }
         }
 
@@ -183,8 +191,9 @@ private fun AddSceneContentPreview() {
                 onTypeChanged = { type = it },
                 navigateToCamera = {},
                 onTitleChanged = {},
-                onCreativesChanged = { _, _ -> },
-                onCreativeRemoved = {},
+                onChangeCreatives = { _, _ -> },
+                onRemoveCreative = {},
+                onAddCreative = {},
                 onRewardChanged = {},
                 onQuoteChanged = {},
                 onPublisherChanged = {},

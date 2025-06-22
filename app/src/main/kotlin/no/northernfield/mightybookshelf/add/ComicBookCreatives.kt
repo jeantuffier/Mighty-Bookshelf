@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -39,24 +38,21 @@ import no.northernfield.mightybookshelf.ui.theme.MightyBookshelfTheme
 fun ComicBookCreatives(
     modifier: Modifier = Modifier,
     state: AddSceneState,
-    onCreativesChanged: (Int, Creative) -> Unit,
+    onAddCreative: () -> Unit,
+    onChangeCreatives: (Int, Creative) -> Unit,
     onRemoveCreative: () -> Unit,
 ) {
-    var amount by remember { mutableIntStateOf(1) }
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        for (i in 0 until amount) {
-            var selectedCreativeRole by remember { mutableStateOf(CreativeRoles.AUTHOR) }
+        state.creatives.forEachIndexed { index, creative ->
             var expanded by remember { mutableStateOf(false) }
-            val textFieldValue =
-                state.creatives.firstOrNull { it.role == selectedCreativeRole }?.name ?: ""
-            val placeholder = selectedCreativeRole.displayName()
+            val placeholder = creative.role.displayName()
             Row(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     modifier = Modifier.weight(1f),
-                    value = textFieldValue,
+                    value = creative.name,
                     placeholder = {
                         Text(
                             modifier = Modifier.alpha(0.8f),
@@ -64,13 +60,13 @@ fun ComicBookCreatives(
                             style = MaterialTheme.typography.bodySmall,
                         )
                     },
-                    onValueChange = { onCreativesChanged(i, Creative(selectedCreativeRole, it)) },
+                    onValueChange = { onChangeCreatives(index, Creative(creative.role, it)) },
                     textStyle = MaterialTheme.typography.bodyMedium,
                     trailingIcon = {
                         Box {
                             TextButton(onClick = { expanded = !expanded }) {
                                 Row {
-                                    Text(selectedCreativeRole.displayName())
+                                    Text(creative.role.displayName())
                                     Icon(
                                         Icons.Default.ArrowDropDown,
                                         contentDescription = "Localized description",
@@ -86,8 +82,7 @@ fun ComicBookCreatives(
                                     DropdownMenuItem(
                                         text = { Text(it.displayName()) },
                                         onClick = {
-                                            selectedCreativeRole = it
-                                            onCreativesChanged(i, Creative(it, textFieldValue))
+                                            onChangeCreatives(index, Creative(it, creative.name))
                                             expanded = false
                                         }
                                     )
@@ -96,15 +91,8 @@ fun ComicBookCreatives(
                         }
                     }
                 )
-                if (i > 0 && i == amount - 1) {
-                    IconButton(
-                        onClick = {
-                            amount -= 1
-                            if (textFieldValue.isNotEmpty()) {
-                                onRemoveCreative()
-                            }
-                        }
-                    ) {
+                if (index > 0 && index == state.creatives.size - 1) {
+                    IconButton(onClick = onRemoveCreative) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Remove creative role",
@@ -112,14 +100,14 @@ fun ComicBookCreatives(
                     }
                 }
             }
-            if (i == amount - 1) {
+            if (index == state.creatives.size - 1) {
                 IconButton(
                     onClick = {
-                        if (textFieldValue.isNotEmpty()) {
-                            amount += 1
+                        if (creative.name.isNotEmpty()) {
+                            onAddCreative()
                         }
                     },
-                    enabled = textFieldValue.isNotEmpty()
+                    enabled = creative.name.isNotEmpty()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -148,8 +136,9 @@ private fun ComicBookCreativesPreview() {
                     language = "Language",
                     error = null
                 ),
-                onCreativesChanged = { _, _ -> },
+                onChangeCreatives = { _, _ -> },
                 onRemoveCreative = {},
+                onAddCreative = {},
             )
         }
     }

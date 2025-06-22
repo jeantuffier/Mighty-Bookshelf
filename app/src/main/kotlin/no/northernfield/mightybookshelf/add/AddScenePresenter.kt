@@ -13,6 +13,7 @@ import kotlin.text.lowercase
 sealed interface AddSceneEvents {
     data class BookTypeChanged(val type: BookType) : AddSceneEvents
     data class TitleChanged(val title: String) : AddSceneEvents
+    data object CreativesAdded : AddSceneEvents
     data class CreativesChanged(val index: Int, val creative: Creative) : AddSceneEvents
     data object CreativeRemoved : AddSceneEvents
     data class RewardChanged(val reward: String) : AddSceneEvents
@@ -62,7 +63,7 @@ fun addScenePresenter(
         AddSceneState(
             type = BookType.BOOK,
             title = "",
-            creatives = listOf(),
+            creatives = listOf(Creative(CreativeRoles.AUTHOR, "")),
             reward = "",
             quote = "",
             publisher = "",
@@ -74,20 +75,27 @@ fun addScenePresenter(
             when (it) {
                 is AddSceneEvents.BookTypeChanged -> value = value.copy(type = it.type)
                 is AddSceneEvents.TitleChanged -> value = value.copy(title = it.title)
-                is AddSceneEvents.CreativesChanged -> value = value.copy(
-                    creatives = value.creatives
-                        .toMutableList().apply {
-                            if (it.index >= this.size) {
-                                add(it.creative)
-                            } else {
+                is AddSceneEvents.CreativesChanged -> {
+                    if (it.index < 0 || it.index > value.creatives.size) {
+                        value = value.copy(error = "Invalid creative index")
+                        return@onEach
+                    }
+                    value = value.copy(
+                        creatives = value.creatives
+                            .toMutableList().apply {
                                 this[it.index] = it.creative
                             }
-                        }
+                    )
+                }
+                is AddSceneEvents.CreativesAdded -> value = value.copy(
+                    creatives = value.creatives + Creative(CreativeRoles.WRITER, "")
                 )
 
-                is AddSceneEvents.CreativeRemoved -> value = value.copy(
-                    creatives = value.creatives.dropLast(1)
-                )
+                is AddSceneEvents.CreativeRemoved -> {
+                    value = value.copy(
+                        creatives = value.creatives.dropLast(1)
+                    )
+                }
                 is AddSceneEvents.RewardChanged -> value = value.copy(reward = it.reward)
                 is AddSceneEvents.QuoteChanged -> value = value.copy(quote = it.quote)
                 is AddSceneEvents.PublisherChanged -> value = value.copy(publisher = it.publisher)
