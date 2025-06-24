@@ -16,7 +16,11 @@ val cameraModule = module {
     single(named(CAMERA_EVENT_BUS)) {
         EventBus<CameraEvent>()
     }
+
+    single {
+        AiAnalysis()
+    }
 }
 
 @Composable
-fun cameraEventBus() = koinInject<EventBus<CameraEvent>>(named(CAMERA_EVENT_BUS ))
+fun cameraEventBus() = koinInject<EventBus<CameraEvent>>(named(CAMERA_EVENT_BUS))

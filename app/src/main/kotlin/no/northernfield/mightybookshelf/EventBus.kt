@@ -12,7 +12,9 @@ interface EventBus<T> {
 }
 
 fun <T> EventBus() = object : EventBus<T> {
-    private val _events = Channel<T>()
+    private val _events = Channel<T>(
+
+    )
     override val events = _events.receiveAsFlow()
 
     override fun produceEvent(event: T) {

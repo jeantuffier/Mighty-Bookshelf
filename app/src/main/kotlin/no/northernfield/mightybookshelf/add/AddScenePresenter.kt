@@ -6,17 +6,19 @@ import androidx.compose.runtime.State
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.json.jsonPrimitive
+import no.northernfield.mightybookshelf.camera.AiAnalysis
 import no.northernfield.mightybookshelf.database.AddDao
 import no.northernfield.mightybookshelf.database.BookCreativeEntity
 import no.northernfield.mightybookshelf.database.BookEntity
 import no.northernfield.mightybookshelf.database.CreativeEntity
 import no.northernfield.mightybookshelf.produceSaveableState
 import org.koin.compose.koinInject
-import kotlin.text.lowercase
 
 sealed interface AddSceneEvents {
     data class BookTypeChanged(val type: BookType) : AddSceneEvents
@@ -61,26 +63,61 @@ data class AddSceneState(
     val publisher: String,
     val language: String,
     val error: String?,
-) : Parcelable
-
-@Composable
-fun addScenePresenter(
-    events: Flow<AddSceneEvents> = addSceneEventBus().events,
-    addDao: AddDao = koinInject<AddDao>(),
-    dispatcher: CoroutineDispatcher = Dispatchers.IO,
-): State<AddSceneState> =
-    produceSaveableState(
-        AddSceneState(
-            type = BookType.BOOK,
+) : Parcelable {
+    companion object {
+        fun default(type: BookType) = AddSceneState(
+            type = type,
             title = "",
-            creatives = listOf(Creative(CreativeRoles.AUTHOR, "")),
+            creatives = if (type == BookType.BOOK) {
+                listOf(Creative(CreativeRoles.AUTHOR, ""))
+            } else {
+                listOf(Creative(CreativeRoles.WRITER, ""))
+            },
             reward = "",
             quote = "",
             publisher = "",
             language = "",
             error = null
         )
-    ) {
+    }
+}
+
+@Composable
+fun addScenePresenter(
+    events: Flow<AddSceneEvents> = addSceneEventBus().events,
+    aiAnalysis: AiAnalysis = koinInject(),
+    addDao: AddDao = koinInject<AddDao>(),
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+): State<AddSceneState> =
+    produceSaveableState(AddSceneState.default(BookType.BOOK)) {
+        aiAnalysis.data.filter { it.isNotEmpty() }
+            .onEach {
+                val title = it["title"]?.jsonPrimitive?.content ?: ""
+                val subtitle = it["subtitle"]?.jsonPrimitive?.content ?: ""
+                val creatives = mapOf(
+                    CreativeRoles.WRITER to (it["writer"]?.jsonPrimitive?.content ?: ""),
+                    CreativeRoles.AUTHOR to (it["author"]?.jsonPrimitive?.content ?: ""),
+                    CreativeRoles.ARTIST to (it["artist"]?.jsonPrimitive?.content ?: ""),
+                    CreativeRoles.COLORIST to (it["colorist"]?.jsonPrimitive?.content ?: ""),
+                ).filter { it.value.isNotEmpty() }
+                    .map { Creative(it.key, it.value) }
+                    .toList()
+
+                value = value.copy(
+                    title = if (subtitle.isNotEmpty()) {
+                        "$title: $subtitle"
+                    } else {
+                        title
+                    },
+                    publisher = it["publisher"]?.jsonPrimitive?.content ?: "",
+                    language = it["language"]?.jsonPrimitive?.content ?: "",
+                    reward = it["rewards"]?.jsonPrimitive?.content ?: "",
+                    quote = it["quote"]?.jsonPrimitive?.content ?: "",
+                    creatives = creatives
+                )
+                aiAnalysis.reset()
+            }.launchIn(this)
+
         events.onEach {
             when (it) {
                 is AddSceneEvents.BookTypeChanged -> value = value.copy(type = it.type)
@@ -97,6 +134,7 @@ fun addScenePresenter(
                             }
                     )
                 }
+
                 is AddSceneEvents.CreativesAdded -> value = value.copy(
                     creatives = value.creatives + Creative(CreativeRoles.WRITER, "")
                 )
@@ -106,6 +144,7 @@ fun addScenePresenter(
                         creatives = value.creatives.dropLast(1)
                     )
                 }
+
                 is AddSceneEvents.RewardChanged -> value = value.copy(reward = it.reward)
                 is AddSceneEvents.QuoteChanged -> value = value.copy(quote = it.quote)
                 is AddSceneEvents.PublisherChanged -> value = value.copy(publisher = it.publisher)
@@ -131,6 +170,7 @@ fun addScenePresenter(
                         creativeIds.forEach { creativeId ->
                             addDao.insertBookCreative(BookCreativeEntity(bookId, creativeId))
                         }
+                        value = AddSceneState.default(value.type)
                     }
                 }
             }

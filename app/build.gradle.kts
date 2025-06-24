@@ -19,6 +19,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "MISTRAL_API_KEY", "\"${providers.gradleProperty("mistralApiKey").get()}\"")
     }
 
     ksp {
@@ -43,6 +45,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -70,6 +73,13 @@ dependencies {
     implementation(libs.koin)
     implementation(libs.arrow.core)
     implementation(libs.arrow.fx)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.auth)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.client.logging)
+    implementation(libs.slf4j)
 
     ksp(libs.androidx.room.compiler)
 
