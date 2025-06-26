@@ -13,11 +13,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-sealed interface Scenes : NavKey {
-    companion object {
-        val topLevelScenes = listOf<TopLevelScenes>(Home, Search, Add)
-    }
-}
+sealed interface Scenes : NavKey
 
 sealed interface TopLevelScenes : Scenes {
     val unselectedIcon: ImageVector
@@ -46,3 +42,5 @@ data object Add : TopLevelScenes {
 data object Camera : Scenes
 
 val LocalBackStack = staticCompositionLocalOf<NavBackStack> { NavBackStack() }
+
+fun NavBackStack.pop() = removeAt(lastIndex)

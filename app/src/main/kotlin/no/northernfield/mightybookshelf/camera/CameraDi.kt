@@ -18,7 +18,7 @@ val cameraModule = module {
     }
 
     single {
-        AiAnalysis()
+        ImageAnalysis()
     }
 }
 

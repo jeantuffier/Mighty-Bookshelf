@@ -133,6 +133,7 @@ private fun ComicBookCreativesPreview() {
                     quote = "Quote",
                     publisher = "Publisher",
                     language = "Language",
+                    imageUri = "",
                     error = null
                 ),
                 onChangeCreatives = { _, _ -> },

@@ -1,7 +1,6 @@
 package no.northernfield.mightybookshelf.networking
 
 
-import android.net.Uri
 import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -12,58 +11,15 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import java.io.File
 
 fun interface PostPicture {
     suspend operator fun invoke(input: File): JsonObject
 }
-
-@Serializable
-data class UploadFileResponse(val id: String)
-
-@Serializable
-data class SignedUrlResponse(val url: String)
-
-@Serializable
-private data class Message(
-    val role: String,
-    val content: List<JsonObject>,
-)
-
-@Serializable
-data class ResponseFormat(val type: String)
-
-@Serializable
-private data class MistralOcrBodyRequest(
-    val model: String,
-    val messages: List<Message>,
-    @SerialName("document_image_limit") val documentImageLimit: Int,
-    @SerialName("document_page_limit") val documentPageLimit: Int,
-    @SerialName("response_format") val responseFormat: ResponseFormat,
-    //@SerialName("include_image_base64") val includeImageBase64: Boolean,
-)
-
-@Serializable
-data class ChoiceMessage(
-    val content: String,
-)
-
-@Serializable
-data class Choice(
-    val message: ChoiceMessage,
-)
-
-@Serializable
-data class MistralChatResponse(
-    val choices: List<Choice>,
-)
 
 fun PostPicture(
     client: HttpClient

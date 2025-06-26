@@ -23,16 +23,20 @@ import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+data class CapturedImage(
+    val file: File,
+    val uri: Uri,
+)
 
 fun interface TakePicture {
     suspend operator fun invoke(
         context: Context,
         imageCapture: ImageCapture
-    ): Either<CameraError, File>
+    ): Either<CameraError, CapturedImage>
 }
 
 fun TakePicture() = TakePicture { context, imageCapture ->
-    suspendCoroutine<Either<CameraError, File>> { continuation ->
+    suspendCoroutine<Either<CameraError, CapturedImage>> { continuation ->
         val name = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
             .format(System.currentTimeMillis())
         val contentValues = ContentValues().apply {
@@ -59,7 +63,7 @@ fun TakePicture() = TakePicture { context, imageCapture ->
                     continuation.resume(UriIsNull.left())
                 } else {
                     val file = getFile(context, uri)
-                    continuation.resume(file.right())
+                    continuation.resume(CapturedImage(file, uri).right())
                 }
             }
         }

@@ -1,5 +1,6 @@
 package no.northernfield.mightybookshelf.add
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,9 +12,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -29,7 +33,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import no.northernfield.mightybookshelf.LocalBackStack
 import no.northernfield.mightybookshelf.R
+import no.northernfield.mightybookshelf.pop
 import no.northernfield.mightybookshelf.ui.theme.MightyBookshelfTheme
 
 @Composable
@@ -73,13 +79,30 @@ fun AddSceneContent(
 ) {
     val scrollState = rememberScrollState()
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
             .verticalScroll(scrollState)
             .padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(modifier = Modifier.height(24.dp))
-        Text("Add a book", style = MaterialTheme.typography.headlineLarge)
+        Box(modifier = Modifier.fillMaxWidth()) {
+            val backstack = LocalBackStack.current
+            IconButton(
+                modifier = Modifier.align(Alignment.CenterStart),
+                onClick = { backstack.pop() }) {
+                Icon(
+                    modifier = Modifier.padding(start = 16.dp),
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "navigate back"
+                )
+            }
+            Text(
+                text = "Add a book",
+                style = MaterialTheme.typography.headlineLarge,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
         Spacer(modifier = Modifier.height(24.dp))
         Row {
             FilterChip(
@@ -186,6 +209,7 @@ private fun AddSceneContentPreview() {
                     quote = "Quote",
                     publisher = "Publisher",
                     language = "Language",
+                    imageUri = "uri",
                     error = null
                 ),
                 onTypeChanged = { type = it },

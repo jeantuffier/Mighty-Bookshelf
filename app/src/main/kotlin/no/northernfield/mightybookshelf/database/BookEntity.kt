@@ -14,4 +14,5 @@ data class BookEntity(
     val quote: String,
     val publisher: String,
     val language: String,
+    val imageUri: String,
 )

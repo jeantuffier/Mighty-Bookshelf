@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "bbd3ae9c7b61461b9dc7b82203cbc2aa",
+    "identityHash": "00d307575ccdece2682ee979151e893c",
     "entities": [
       {
         "tableName": "BookEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `type` TEXT NOT NULL, `reward` TEXT NOT NULL, `quote` TEXT NOT NULL, `publisher` TEXT NOT NULL, `language` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `type` TEXT NOT NULL, `reward` TEXT NOT NULL, `quote` TEXT NOT NULL, `publisher` TEXT NOT NULL, `language` TEXT NOT NULL, `imageUri` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -47,6 +47,12 @@
           {
             "fieldPath": "language",
             "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageUri",
+            "columnName": "imageUri",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -152,7 +158,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bbd3ae9c7b61461b9dc7b82203cbc2aa')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '00d307575ccdece2682ee979151e893c')"
     ]
   }
 }

@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.json.jsonPrimitive
-import no.northernfield.mightybookshelf.camera.AiAnalysis
+import no.northernfield.mightybookshelf.camera.ImageAnalysis
 import no.northernfield.mightybookshelf.database.AddDao
 import no.northernfield.mightybookshelf.database.BookCreativeEntity
 import no.northernfield.mightybookshelf.database.BookEntity
@@ -62,6 +62,7 @@ data class AddSceneState(
     val quote: String,
     val publisher: String,
     val language: String,
+    val imageUri: String,
     val error: String?,
 ) : Parcelable {
     companion object {
@@ -77,6 +78,7 @@ data class AddSceneState(
             quote = "",
             publisher = "",
             language = "",
+            imageUri = "",
             error = null
         )
     }
@@ -85,20 +87,20 @@ data class AddSceneState(
 @Composable
 fun addScenePresenter(
     events: Flow<AddSceneEvents> = addSceneEventBus().events,
-    aiAnalysis: AiAnalysis = koinInject(),
+    imageAnalysis: ImageAnalysis = koinInject(),
     addDao: AddDao = koinInject<AddDao>(),
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): State<AddSceneState> =
     produceSaveableState(AddSceneState.default(BookType.BOOK)) {
-        aiAnalysis.data.filter { it.isNotEmpty() }
-            .onEach {
-                val title = it["title"]?.jsonPrimitive?.content ?: ""
-                val subtitle = it["subtitle"]?.jsonPrimitive?.content ?: ""
+        imageAnalysis.results.filter { it.data.isNotEmpty() }
+            .onEach { (imageUri, data) ->
+                val title = data["title"]?.jsonPrimitive?.content ?: ""
+                val subtitle = data["subtitle"]?.jsonPrimitive?.content ?: ""
                 val creatives = mapOf(
-                    CreativeRoles.WRITER to (it["writer"]?.jsonPrimitive?.content ?: ""),
-                    CreativeRoles.AUTHOR to (it["author"]?.jsonPrimitive?.content ?: ""),
-                    CreativeRoles.ARTIST to (it["artist"]?.jsonPrimitive?.content ?: ""),
-                    CreativeRoles.COLORIST to (it["colorist"]?.jsonPrimitive?.content ?: ""),
+                    CreativeRoles.WRITER to (data["writer"]?.jsonPrimitive?.content ?: ""),
+                    CreativeRoles.AUTHOR to (data["author"]?.jsonPrimitive?.content ?: ""),
+                    CreativeRoles.ARTIST to (data["artist"]?.jsonPrimitive?.content ?: ""),
+                    CreativeRoles.COLORIST to (data["colorist"]?.jsonPrimitive?.content ?: ""),
                 ).filter { it.value.isNotEmpty() }
                     .map { Creative(it.key, it.value) }
                     .toList()
@@ -109,13 +111,14 @@ fun addScenePresenter(
                     } else {
                         title
                     },
-                    publisher = it["publisher"]?.jsonPrimitive?.content ?: "",
-                    language = it["language"]?.jsonPrimitive?.content ?: "",
-                    reward = it["rewards"]?.jsonPrimitive?.content ?: "",
-                    quote = it["quote"]?.jsonPrimitive?.content ?: "",
-                    creatives = creatives
+                    publisher = data["publisher"]?.jsonPrimitive?.content ?: "",
+                    language = data["language"]?.jsonPrimitive?.content ?: "",
+                    reward = data["rewards"]?.jsonPrimitive?.content ?: "",
+                    quote = data["quote"]?.jsonPrimitive?.content ?: "",
+                    creatives = creatives,
+                    imageUri = imageUri,
                 )
-                aiAnalysis.reset()
+                imageAnalysis.reset()
             }.launchIn(this)
 
         events.onEach {
@@ -157,7 +160,8 @@ fun addScenePresenter(
                             reward = value.reward,
                             quote = value.quote,
                             publisher = value.publisher,
-                            language = value.language
+                            language = value.language,
+                            imageUri = value.imageUri,
                         )
                         val bookId = addDao.insertBook(bookEntity)
                         val creativeIds = value.creatives.map {
