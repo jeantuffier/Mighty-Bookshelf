@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.json.jsonPrimitive
-import no.northernfield.mightybookshelf.camera.ImageAnalysis
+import no.northernfield.mightybookshelf.camera.ImageAnalysisEventBus
 import no.northernfield.mightybookshelf.database.AddDao
 import no.northernfield.mightybookshelf.database.BookCreativeEntity
 import no.northernfield.mightybookshelf.database.BookEntity
@@ -87,12 +87,12 @@ data class AddSceneState(
 @Composable
 fun addScenePresenter(
     events: Flow<AddSceneEvents> = addSceneEventBus().events,
-    imageAnalysis: ImageAnalysis = koinInject(),
+    imageAnalysisEventBus: ImageAnalysisEventBus = koinInject(),
     addDao: AddDao = koinInject<AddDao>(),
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): State<AddSceneState> =
     produceSaveableState(AddSceneState.default(BookType.BOOK)) {
-        imageAnalysis.results.filter { it.data.isNotEmpty() }
+        imageAnalysisEventBus.results.filter { it.data.isNotEmpty() }
             .onEach { (imageUri, data) ->
                 val title = data["title"]?.jsonPrimitive?.content ?: ""
                 val subtitle = data["subtitle"]?.jsonPrimitive?.content ?: ""
@@ -118,7 +118,7 @@ fun addScenePresenter(
                     creatives = creatives,
                     imageUri = imageUri,
                 )
-                imageAnalysis.reset()
+                imageAnalysisEventBus.reset()
             }.launchIn(this)
 
         events.onEach {

@@ -9,7 +9,7 @@ val networkingDi = module {
         mistralHttpClient
     }
 
-    factory<PostPicture> {
-        PostPicture(client = get())
+    factory<ProcessImage> {
+        ProcessImage(client = get())
     }
 }

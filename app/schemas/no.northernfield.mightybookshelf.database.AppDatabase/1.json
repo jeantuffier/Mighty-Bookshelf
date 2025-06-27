@@ -2,10 +2,10 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "00d307575ccdece2682ee979151e893c",
+    "identityHash": "8231160c2d72944b61e3da2c9f2e4eb7",
     "entities": [
       {
-        "tableName": "BookEntity",
+        "tableName": "book",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `type` TEXT NOT NULL, `reward` TEXT NOT NULL, `quote` TEXT NOT NULL, `publisher` TEXT NOT NULL, `language` TEXT NOT NULL, `imageUri` TEXT NOT NULL)",
         "fields": [
           {
@@ -65,7 +65,7 @@
         }
       },
       {
-        "tableName": "CreativeEntity",
+        "tableName": "creative",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `roles` TEXT NOT NULL)",
         "fields": [
           {
@@ -95,18 +95,18 @@
         }
       },
       {
-        "tableName": "BookCreativeEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`bookId` INTEGER NOT NULL, `creativeId` INTEGER NOT NULL, PRIMARY KEY(`bookId`, `creativeId`), FOREIGN KEY(`bookId`) REFERENCES `BookEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`creativeId`) REFERENCES `CreativeEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "tableName": "book_creative",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`book_id` INTEGER NOT NULL, `creative_id` INTEGER NOT NULL, PRIMARY KEY(`book_id`, `creative_id`), FOREIGN KEY(`book_id`) REFERENCES `book`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`creative_id`) REFERENCES `creative`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "bookId",
-            "columnName": "bookId",
+            "columnName": "book_id",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
             "fieldPath": "creativeId",
-            "columnName": "creativeId",
+            "columnName": "creative_id",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -114,40 +114,40 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "bookId",
-            "creativeId"
+            "book_id",
+            "creative_id"
           ]
         },
         "indices": [
           {
-            "name": "index_BookCreativeEntity_bookId_creativeId",
+            "name": "index_book_creative_book_id_creative_id",
             "unique": false,
             "columnNames": [
-              "bookId",
-              "creativeId"
+              "book_id",
+              "creative_id"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_BookCreativeEntity_bookId_creativeId` ON `${TABLE_NAME}` (`bookId`, `creativeId`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_book_creative_book_id_creative_id` ON `${TABLE_NAME}` (`book_id`, `creative_id`)"
           }
         ],
         "foreignKeys": [
           {
-            "table": "BookEntity",
+            "table": "book",
             "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
-              "bookId"
+              "book_id"
             ],
             "referencedColumns": [
               "id"
             ]
           },
           {
-            "table": "CreativeEntity",
+            "table": "creative",
             "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
-              "creativeId"
+              "creative_id"
             ],
             "referencedColumns": [
               "id"
@@ -158,7 +158,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '00d307575ccdece2682ee979151e893c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8231160c2d72944b61e3da2c9f2e4eb7')"
     ]
   }
 }

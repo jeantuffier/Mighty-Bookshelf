@@ -80,6 +80,7 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.logging)
     implementation(libs.slf4j)
+    implementation(libs.coil)
 
     ksp(libs.androidx.room.compiler)
 

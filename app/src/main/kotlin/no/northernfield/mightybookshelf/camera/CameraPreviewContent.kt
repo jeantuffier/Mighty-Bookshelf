@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,6 +42,19 @@ fun CameraPreviewContent(modifier: Modifier) {
         }
         if (previewState.isProcessingImage) {
             ImageProcessingDialog()
+        }
+
+        previewState.error?.let {
+            AlertDialog(
+                onDismissRequest = { cameraEventBus.produceEvent(CameraEvent.ErrorDialogDismissed) },
+                title = { Text(it.title) },
+                text = { Text(it.message) },
+                confirmButton = {
+                    Button(onClick = { cameraEventBus.produceEvent(CameraEvent.ErrorDialogDismissed) }) {
+                        Text("OK")
+                    }
+                }
+            )
         }
     }
 }

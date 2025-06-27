@@ -16,4 +16,8 @@ val databaseModule = module {
     factory<AddDao> {
         get<AppDatabase>().addDao()
     }
+
+    factory<SelectDao> {
+        get<AppDatabase>().selectDao()
+    }
 }

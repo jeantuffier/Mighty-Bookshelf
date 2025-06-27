@@ -2,6 +2,9 @@ package no.northernfield.mightybookshelf.networking
 
 
 import android.util.Log
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.formData
@@ -11,19 +14,18 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import java.io.File
 
-fun interface PostPicture {
-    suspend operator fun invoke(input: File): JsonObject
+fun interface ProcessImage {
+    suspend operator fun invoke(input: File): Either<HttpStatusCode, JsonObject>
 }
 
-fun PostPicture(
-    client: HttpClient
-) = PostPicture { input ->
+fun ProcessImage(client: HttpClient) = ProcessImage { input ->
     val uploadResponse = client.submitFormWithBinaryData(
         url = "/v1/files",
         formData = formData {
@@ -96,10 +98,16 @@ fun PostPicture(
                 responseFormat = ResponseFormat("json_object"),
             )
         )
-    }.body<MistralChatResponse>()
-    Log.d("PostPicture", "response: $response")
-    val sanitizedString = response.choices.first().message.content
-        .replace("\n", "")
-    Log.d("PostPicture", "sanitized: $sanitizedString")
-    Json.parseToJsonElement(sanitizedString).jsonObject
+    }
+    when {
+        response.status.value == 200 -> {
+            val responseBody = response.body<MistralChatResponse>()
+            val sanitizedString = responseBody.choices.first().message.content
+                .replace("\n", "")
+            Log.d("PostPicture", "sanitized: $sanitizedString")
+            Json.parseToJsonElement(sanitizedString).jsonObject.right()
+        }
+
+        else -> response.status.left()
+    }
 }

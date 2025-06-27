@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import no.northernfield.mightybookshelf.add.BookType
 
-@Entity
+@Entity(tableName = "book")
 data class BookEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

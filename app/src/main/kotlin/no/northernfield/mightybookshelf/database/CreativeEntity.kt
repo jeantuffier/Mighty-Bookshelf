@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import no.northernfield.mightybookshelf.add.CreativeRoles
 
-@Entity
+@Entity(tableName = "creative")
 data class CreativeEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

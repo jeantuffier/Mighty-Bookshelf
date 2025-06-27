@@ -1,30 +1,33 @@
 package no.northernfield.mightybookshelf.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
+import kotlinx.serialization.SerialName
 
 @Entity(
-    primaryKeys = ["bookId", "creativeId"],
+    tableName = "book_creative",
+    primaryKeys = ["book_id", "creative_id"],
     foreignKeys = [
         ForeignKey(
             entity = BookEntity::class,
             parentColumns = ["id"],
-            childColumns = ["bookId"],
+            childColumns = ["book_id"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
             entity = CreativeEntity::class,
             parentColumns = ["id"],
-            childColumns = ["creativeId"],
+            childColumns = ["creative_id"],
             onDelete = ForeignKey.CASCADE
         )
     ],
     indices = [
-        Index(value = ["bookId", "creativeId"]),
+        Index(value = ["book_id", "creative_id"]),
     ],
 )
 data class BookCreativeEntity(
-    val bookId: Long,
-    val creativeId: Long,
+    @ColumnInfo(name = "book_id") val bookId: Long,
+    @ColumnInfo(name = "creative_id") val creativeId: Long,
 )

@@ -13,8 +13,6 @@ import androidx.core.content.ContextCompat
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import no.northernfield.mightybookshelf.camera.CameraError.ImageCaptureError
-import no.northernfield.mightybookshelf.camera.CameraError.UriIsNull
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -22,6 +20,11 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+
+sealed interface CaptureImageError {
+    data class ImageCaptureError(val message: String?) : CaptureImageError
+    object UriIsNull : CaptureImageError
+}
 
 data class CapturedImage(
     val file: File,
@@ -32,11 +35,11 @@ fun interface TakePicture {
     suspend operator fun invoke(
         context: Context,
         imageCapture: ImageCapture
-    ): Either<CameraError, CapturedImage>
+    ): Either<CaptureImageError, CapturedImage>
 }
 
 fun TakePicture() = TakePicture { context, imageCapture ->
-    suspendCoroutine<Either<CameraError, CapturedImage>> { continuation ->
+    suspendCoroutine<Either<CaptureImageError, CapturedImage>> { continuation ->
         val name = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
             .format(System.currentTimeMillis())
         val contentValues = ContentValues().apply {
@@ -55,12 +58,12 @@ fun TakePicture() = TakePicture { context, imageCapture ->
         val executor = ContextCompat.getMainExecutor(context)
         val callback = object : ImageCapture.OnImageSavedCallback {
             override fun onError(error: ImageCaptureException) =
-                continuation.resume(ImageCaptureError(error.message).left())
+                continuation.resume(CaptureImageError.ImageCaptureError(error.message).left())
 
             override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                 val uri = outputFileResults.savedUri
                 if (uri == null) {
-                    continuation.resume(UriIsNull.left())
+                    continuation.resume(CaptureImageError.UriIsNull.left())
                 } else {
                     val file = getFile(context, uri)
                     continuation.resume(CapturedImage(file, uri).right())

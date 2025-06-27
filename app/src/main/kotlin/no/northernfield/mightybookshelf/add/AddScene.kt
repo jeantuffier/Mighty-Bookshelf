@@ -33,19 +33,21 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import no.northernfield.mightybookshelf.Camera
 import no.northernfield.mightybookshelf.LocalBackStack
 import no.northernfield.mightybookshelf.R
 import no.northernfield.mightybookshelf.pop
 import no.northernfield.mightybookshelf.ui.theme.MightyBookshelfTheme
 
 @Composable
-fun AddScene(modifier: Modifier, navigateToCamera: () -> Unit) {
+fun AddScene(modifier: Modifier) {
     val eventBus = addSceneEventBus()
     val state by addScenePresenter(events = eventBus.events)
+    val backstack = LocalBackStack.current
     AddSceneContent(
         modifier = modifier,
         state = state,
-        navigateToCamera = navigateToCamera,
+        navigateToCamera = { backstack.add(Camera) },
         onTypeChanged = { eventBus.produceEvent(AddSceneEvents.BookTypeChanged(it)) },
         onTitleChanged = { eventBus.produceEvent(AddSceneEvents.TitleChanged(it)) },
         onChangeCreatives = { index, creative ->

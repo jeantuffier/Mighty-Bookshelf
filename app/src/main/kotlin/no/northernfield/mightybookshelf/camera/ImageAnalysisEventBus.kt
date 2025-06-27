@@ -4,27 +4,27 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.JsonObject
 
-data class ImageAnalysisResult(
+data class SuccessfulImageAnalysisEvent(
     val imageUri: String,
     val data: JsonObject
 ) {
     companion object {
-        val empty = ImageAnalysisResult(
+        val empty = SuccessfulImageAnalysisEvent(
             imageUri = "",
             data = JsonObject(emptyMap())
         )
     }
 }
 
-class ImageAnalysis {
-    private val _data = MutableStateFlow(ImageAnalysisResult.empty)
+class ImageAnalysisEventBus {
+    private val _data = MutableStateFlow(SuccessfulImageAnalysisEvent.empty)
     val results = _data.asStateFlow()
 
-    fun emitNewData(newResult: ImageAnalysisResult) {
+    fun emitNewData(newResult: SuccessfulImageAnalysisEvent) {
         _data.value = newResult
     }
 
     fun reset() {
-        _data.value = ImageAnalysisResult.empty
+        _data.value = SuccessfulImageAnalysisEvent.empty
     }
 }

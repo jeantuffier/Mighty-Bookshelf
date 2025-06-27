@@ -13,4 +13,5 @@ import androidx.room.Database
 )
 abstract class AppDatabase : androidx.room.RoomDatabase() {
     abstract fun addDao(): AddDao
+    abstract fun selectDao(): SelectDao
 }

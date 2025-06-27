@@ -1,9 +1,6 @@
 package no.northernfield.mightybookshelf.camera
 
-import android.content.ContentResolver
 import android.content.Context
-import android.net.Uri
-import android.util.Base64
 import androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
@@ -25,33 +22,34 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import no.northernfield.mightybookshelf.LocalBackStack
-import no.northernfield.mightybookshelf.networking.PostPicture
+import no.northernfield.mightybookshelf.networking.ProcessImage
 import no.northernfield.mightybookshelf.pop
 import org.koin.compose.koinInject
 import java.io.File
 
-sealed interface CameraError {
-    data class ImageCaptureError(val message: String?) : CameraError
-    data object UriIsNull : CameraError
-}
+data class CameraPreviewStateError(
+    val title: String,
+    val message: String,
+)
 
 data class CameraPreviewState(
     val surfaceRequest: SurfaceRequest?,
     val capturedImage: File?,
     val isProcessingImage: Boolean,
-    val error: CameraError?,
+    val error: CameraPreviewStateError?,
 )
 
 sealed interface CameraEvent {
     data object ShutterClicked : CameraEvent
+    data object ErrorDialogDismissed : CameraEvent
 }
 
 @Composable
 fun cameraPreviewPresenter(
     events: Flow<CameraEvent> = cameraEventBus().events,
     takePicture: TakePicture = koinInject(),
-    postPicture: PostPicture = koinInject(),
-    imageAnalysis: ImageAnalysis = koinInject(),
+    processImage: ProcessImage = koinInject(),
+    imageAnalysisEventBus: ImageAnalysisEventBus = koinInject(),
     context: Context = LocalContext.current,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     backStack: NavBackStack = LocalBackStack.current,
@@ -64,21 +62,56 @@ fun cameraPreviewPresenter(
         when (event) {
             is CameraEvent.ShutterClicked -> {
                 when (val result = takePicture(context, imageCapture)) {
-                    is Either.Left -> value = value.copy(error = result.value)
+                    is Either.Left -> {
+                        when (val error = result.value) {
+                            is CaptureImageError.ImageCaptureError -> {
+                                value = value.copy(
+                                    error = CameraPreviewStateError(
+                                        title = "Image Capture Error",
+                                        message = error.message ?: "Unknown error occurred"
+                                    )
+                                )
+                            }
+
+                            CaptureImageError.UriIsNull -> {
+                                value = value.copy(
+                                    error = CameraPreviewStateError(
+                                        title = "Image Capture Error",
+                                        message = "Captured image URI is null"
+                                    )
+                                )
+                            }
+                        }
+                    }
                     is Either.Right -> {
-                        /*val base64 = getBase64ForUriAndPossiblyCrash(result.value, context.contentResolver)
-                        println(base64)
-                        if (base64.isNotEmpty()) {
-                            postPicture(base64)
-                        }*/
                         value = value.copy(isProcessingImage = true)
-                        val data = postPicture(result.value.file)
-                        imageAnalysis.emitNewData(ImageAnalysisResult(result.value.uri.toString(), data))
-                        value = value.copy(isProcessingImage = false)
-                        backStack.pop()
+                        when (val processingResult = processImage(result.value.file)) {
+                            is Either.Left -> {
+                                value = value.copy(
+                                    error = CameraPreviewStateError(
+                                        title = "Image Processing Error",
+                                        message = processingResult.value.description
+                                    )
+                                )
+                            }
+
+                            is Either.Right -> {
+                                bindJob?.cancel()
+                                imageAnalysisEventBus.emitNewData(
+                                    SuccessfulImageAnalysisEvent(
+                                        imageUri = result.value.uri.toString(),
+                                        data = processingResult.value,
+                                    )
+                                )
+                                value = value.copy(isProcessingImage = false)
+                                backStack.pop()
+                            }
+                        }
                     }
                 }
             }
+
+            CameraEvent.ErrorDialogDismissed -> value = value.copy(error = null)
         }
     }.launchIn(this)
 
@@ -106,16 +139,9 @@ private suspend fun bindToCamera(
         imageCaptureUseCase,
     )
 
-    try { awaitCancellation() } finally { processCameraProvider.unbindAll() }
-}
-
-
-private fun getBase64ForUriAndPossiblyCrash(uri: Uri, contentResolver: ContentResolver): String {
-    return try {
-        val bytes = contentResolver.openInputStream(uri)?.readBytes()
-        Base64.encodeToString(bytes, Base64.DEFAULT)
-    } catch (error: Exception) {
-        error.printStackTrace()
-        ""// This exception always occurs
+    try {
+        awaitCancellation()
+    } finally {
+        processCameraProvider.unbindAll()
     }
 }
